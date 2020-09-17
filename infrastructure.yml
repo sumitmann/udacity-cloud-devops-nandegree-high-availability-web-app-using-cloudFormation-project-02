@@ -280,10 +280,12 @@ Resources:
                 Fn::Base64: !Sub |
                     #!/bin/bash
                     apt-get update -y
+                    apt-get install unzip awscli -y
                     apt-get install apache2 -y
                     systemctl start apache2.service
                     cd /var/www/html
-                    echo "Udacity Demo Web Server Up and Running!" > index.html
+                    aws s3 cp s3://udacity-s3-choulis/udacity.zip .
+                    unzip -o udacity.zip
             ImageId: ami-0841edc20334f9287
             IamInstanceProfile: !Ref ProfileWithRolesForOurApp
             SecurityGroups:
