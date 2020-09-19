@@ -5,20 +5,20 @@ Parameters:
     Description: An environment name that will be prefixed to resources
     Type: String
   VpcCIDR:
-    Description: CIDR for the VPC
+    Description: CIDR for VPC
     Type: String
     Default: 10.0.0.0/16
   PublicSubnet1CIDR:
-    Description: CIDR for subnet
+    Description: CIDR notation for public subnet (Availability Zone 1)
     Type: String
   PublicSubnet2CIDR:
-    Description: CIDR for subnet
+    Description: CIDR notation for public subnet (Availability Zone 2)
     Type: String
   PrivateSubnet1CIDR:
-    Description: CIDR for subnet
+    Description: CIDR notation for private subnet (Availability Zone 1)
     Type: String
   PrivateSubnet2CIDR:
-    Description: CIDR for subnet
+    Description: CIDR notation for private subnet (Availability Zone 1)
     Type: String
 
 Resources:
@@ -88,8 +88,6 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
 
-  # This allocates an Elastic IP which will give you a known/constant IP to use instead of a disposable one.
-  # It is important when you have applications dependending on a specific IP.
   NatGateway1EIP:
     Type: AWS::EC2::EIP
     DependsOn: InternetGatewayAttachment
@@ -127,10 +125,10 @@ Resources:
     DependsOn: InternetGatewayAttachment
     Properties:
       RouteTableId: !Ref PublicRouteTable
-      DestinationCidrBlock: 0.0.0.0/0 # This is like a wildcard, means all addresses
+      DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
-  PublicSubnet1RouteTableAssociation: # This specifies to which subnet this rule applies, we could have a lot of subnets.
+  PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicRouteTable
@@ -155,13 +153,13 @@ Resources:
     Type: AWS::EC2::Route
     Properties:
         RouteTableId: !Ref PrivateRouteTable1
-        DestinationCidrBlock: 0.0.0.0/0 # When you send traffic to the wildcard address, go through the NATGateway
-        NatGatewayId: !Ref NatGateway1 #  It prevents it from exiting to the outside.
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId: !Ref NatGateway1
 
   PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-        RouteTableId: !Ref PrivateRouteTable1 # This associates the route we created above with this subnet.
+        RouteTableId: !Ref PrivateRouteTable1
         SubnetId: !Ref PrivateSubnet1
 
   PrivateRouteTable2:
@@ -190,12 +188,12 @@ Resources:
     Properties:
       GroupDescription: Allow http to our load balancer
       VpcId: !Ref VPC
-      SecurityGroupIngress: # Allow all inbound traffic on port 80
+      SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 80
         ToPort: 80
         CidrIp: 0.0.0.0/0
-      SecurityGroupEgress: # Allow all outbound traffic from port 80
+      SecurityGroupEgress:
       - IpProtocol: tcp
         FromPort: 80
         ToPort: 80
@@ -211,12 +209,12 @@ Resources:
         FromPort: 80
         ToPort: 80
         CidrIp: 0.0.0.0/0
-      - IpProtocol: tcp # This additional rule is for SSH to troubleshoot
+      - IpProtocol: tcp
         FromPort: 22
         ToPort: 22
         CidrIp: 0.0.0.0/0
-      SecurityGroupEgress: # This is for outbound traffic so we want our server to be able to send outbound
-      - IpProtocol: tcp # traffic unrestricted. In case it needs to get software updates etc.
+      SecurityGroupEgress:
+      - IpProtocol: tcp
         FromPort: 0
         ToPort: 65535
         CidrIp: 0.0.0.0/0
@@ -258,7 +256,7 @@ Resources:
   WebAppLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      UserData: # Change to whatever s3 bucket the code is hosted at
+      UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
           apt-get update -y
@@ -270,7 +268,7 @@ Resources:
       IamInstanceProfile: !Ref ListS3BucketsInstanceProfile
       SecurityGroups:
       - Ref: WebServerSecGroup
-      InstanceType: t2.micro
+      InstanceType: t3.micro
       BlockDeviceMappings:
       - DeviceName: "/dev/sdk"
         Ebs:
@@ -282,15 +280,15 @@ Resources:
       VPCZoneIdentifier: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
       LaunchConfigurationName:
         Ref: WebAppLaunchConfig
-      MinSize: '4' # Min amount of instances
-      MaxSize: '6' # Max amount of instances
+      MinSize: '4'
+      MaxSize: '6'
       TargetGroupARNs:
         - Ref: WebAppTargetGroup
 
   WebAppLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Subnets: # It will load balance to both of these subnets
+      Subnets:
       - !Ref PublicSubnet1
       - !Ref PublicSubnet2
       SecurityGroups:
@@ -323,8 +321,8 @@ Resources:
   WebAppTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckIntervalSeconds: 10 # Check our webserver every 10 seconds, if it does not respond with 200
-      HealthCheckPath: / # we will declare it unhealthy and the ASG group will terminate it and launch a new one.
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 8
       HealthyThresholdCount: 2
@@ -333,8 +331,6 @@ Resources:
       UnhealthyThresholdCount: 5
       VpcId: !Ref VPC
 
-
-# This declares what our cloudformation script outputs, so it can be imported and used in other scripts.
 Outputs:
   VPC:
     Description: A reference to the created VPC
