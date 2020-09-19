@@ -13,7 +13,18 @@
 * infrastructure.yml : Udagram Project's CloudFormation script
 * parameters.json : Udagram Project's CloudFormation script parameters
 ```
-## Run below command to deploy:
-
+## Commands:
 ```sh
+### MAC
+1. Create Stack
 > ./create.sh UdagramApp infrastructure.yml parameters.json
+
+2. Delete Stack
+> ./destroy.sh UdagramApp infrastructure.yml parameters.json
+
+### Windows
+1. Create Stack
+> ./create.bat UdagramApp infrastructure.yml parameters.json
+
+2. Delete Stack
+> ./destroy.bat UdagramApp infrastructure.yml parameters.json
