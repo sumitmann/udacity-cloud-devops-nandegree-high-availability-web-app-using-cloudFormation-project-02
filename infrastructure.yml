@@ -268,7 +268,7 @@ Resources:
       IamInstanceProfile: !Ref ListS3BucketsInstanceProfile
       SecurityGroups:
       - Ref: WebServerSecGroup
-      InstanceType: t3.micro
+      InstanceType: t3.small
       BlockDeviceMappings:
       - DeviceName: "/dev/sdk"
         Ebs:
