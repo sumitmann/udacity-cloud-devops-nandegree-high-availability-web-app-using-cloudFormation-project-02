@@ -4,8 +4,6 @@
 
 > In this project, I deployed web servers for a highly available web app using CloudFormation.
 
-![Udagram app diagram](Udacity-Udagram-App.jpg)
-
 ## Files included:
 ```sh
 * Diagram-of-the-Udagram-App.jpeg : AWS infrastructure diagram
@@ -40,3 +38,6 @@
 ```sh
 > ./destroy.bat UdagramApp infrastructure.yml parameters.json
 ```
+
+## Website:
+![Udagram app diagram](Udacity-Udagram-App.jpg)
